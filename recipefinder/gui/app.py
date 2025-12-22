@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import io
 import logging
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import List
+from typing import List, Optional
 
+import requests
+from PIL import Image, ImageTk
 from dotenv import load_dotenv
 
 from ..domain.query_builder import RecipeQueryBuilder
@@ -82,13 +85,22 @@ class RecipeTkApp(tk.Tk):
         btns.pack(fill=tk.X)
         ttk.Button(btns, text="View Details", command=self.on_details).pack(side=tk.LEFT)
 
-        # Details panel
+        # Details panel (image on the left, text on the right)
         detail_frame = ttk.Frame(container)
         detail_frame.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(detail_frame, text="Details").pack(anchor=tk.W)
-        self.details_text = tk.Text(detail_frame, height=12, wrap=tk.WORD)
+        ttk.Label(detail_frame, text="Details").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 4))
+
+        self.image_label = ttk.Label(detail_frame)
+        self.image_label.grid(row=1, column=0, sticky=tk.NW, padx=(0, 10))
+        self.image_photo: Optional[ImageTk.PhotoImage] = None
+
+        self.details_text = tk.Text(detail_frame, height=18, wrap=tk.WORD)
         self.details_text.configure(state=tk.DISABLED)
-        self.details_text.pack(fill=tk.BOTH, expand=True)
+        self.details_text.grid(row=1, column=1, sticky=tk.NSEW)
+
+        # Make the text column expand
+        detail_frame.columnconfigure(1, weight=1)
+        detail_frame.rowconfigure(1, weight=1)
 
     def on_search(self) -> None:
         try:
@@ -130,6 +142,7 @@ class RecipeTkApp(tk.Tk):
             f"Ingredients:\n{ingredients}\n\n"
             f"Instructions:\n{details.instructions}"
         )
+        self._set_image(details.image_url)
         self._set_details(text)
 
     def _set_details(self, text: str) -> None:
@@ -137,6 +150,22 @@ class RecipeTkApp(tk.Tk):
         self.details_text.delete("1.0", tk.END)
         self.details_text.insert(tk.END, text)
         self.details_text.configure(state=tk.DISABLED)
+
+    def _set_image(self, image_url: Optional[str]) -> None:
+        if not image_url:
+            self.image_label.configure(image="", text="No image")
+            self.image_photo = None
+            return
+        try:
+            resp = requests.get(image_url, timeout=10)
+            resp.raise_for_status()
+            img = Image.open(io.BytesIO(resp.content))
+            img.thumbnail((320, 320))
+            self.image_photo = ImageTk.PhotoImage(img)
+            self.image_label.configure(image=self.image_photo, text="")
+        except Exception:
+            self.image_label.configure(image="", text="Image unavailable")
+            self.image_photo = None
 
     def _on_event(self, event: str, payload: dict) -> None:
         # Logs emitted events to console for debugging/telemetry without touching UI
