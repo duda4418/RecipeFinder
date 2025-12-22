@@ -7,6 +7,10 @@ __pycache__/
 .venv/
 venv/
 env/
+# Environment variables
+.env
+.env.*
+
 
 # Distribution / packaging
 build/
