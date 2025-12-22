@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+import re
 from typing import Dict, Any, List
 
 import requests
@@ -76,9 +78,8 @@ class SpoonacularAdapter:
             if (ing.get("name") or "").strip()
         ]
 
-        instructions = data.get("instructions") or ""
-        if not instructions:
-            instructions = data.get("summary") or ""
+        raw_instructions = data.get("instructions") or data.get("summary") or ""
+        instructions = self._strip_html(raw_instructions)
 
         return RecipeDetails(
             id=str(data.get("id")),
@@ -88,4 +89,9 @@ class SpoonacularAdapter:
             image_url=image,
             source=self.SOURCE_NAME,
         )
+
+    @staticmethod
+    def _strip_html(text: str) -> str:
+        no_tags = re.sub(r"<[^>]+>", "", text)
+        return html.unescape(no_tags)
 
