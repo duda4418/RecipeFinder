@@ -53,21 +53,19 @@ python main.py
 
 This project intentionally uses a few patterns that fit naturally with “multiple providers + a single UI”.
 
-### 1) Strategy Pattern
+### 1) Builder Pattern
 
-**Where:** `recipe/strategies.py`
+**Where:** `recipe/query_builder.py`
 
-**What it does here:** Encapsulates different ways to rank/sort recipes after they are fetched.
+**What it does here:** Builds provider-specific query parameter dictionaries from a single user intent (keywords, ingredients, limit).
 
 **Role in the app:**
-- The UI lets the user choose a ranking method.
-- `RecipeService.fetch_recipes(...)` accepts a `RecipeStrategy` and uses it to rank results.
+- The UI constructs a `RecipeQueryBuilder` and sets keywords/ingredients/limit.
+- The service uses the builder to generate request parameters for each provider:
+	- `build_for_mealdb()`
+	- `build_for_spoonacular(api_key)`
 
-**Examples in code:**
-- `BestMatchStrategy` (prioritizes ingredient + keyword hits)
-- `FewerMissingStrategy` (prioritizes fewer missing ingredients)
-
-Why it fits: ranking logic changes often and is easy to swap without changing the fetching code or UI.
+Why it fits: request construction is a “many small options” problem; a builder keeps it readable and prevents parameter logic from leaking into UI/service code.
 
 ### 2) Adapter Pattern
 
@@ -85,45 +83,23 @@ Why it fits: ranking logic changes often and is easy to swap without changing th
 
 Why it fits: the UI and ranking strategies operate on a consistent `Recipe` object and never need to know provider field names.
 
-### 3) Builder Pattern
+### 3) Strategy Pattern
 
-**Where:** `recipe/query_builder.py`
+**Where:** `recipe/strategies.py`
 
-**What it does here:** Builds provider-specific query parameter dictionaries from a single user intent (keywords, ingredients, limit).
-
-**Role in the app:**
-- The UI constructs a `RecipeQueryBuilder` and sets keywords/ingredients/limit.
-- The service uses the builder to generate request parameters for each provider:
-	- `build_for_mealdb()`
-	- `build_for_spoonacular(api_key)`
-
-Why it fits: request construction is a “many small options” problem; a builder keeps it readable and prevents parameter logic from leaking into UI/service code.
-
-### 4) Factory (Factory Function) for HTTP sessions
-
-**Where:** `recipe/http_session.py`
-
-**What it does here:** Centralizes creation of a configured `requests.Session` with retry/backoff behavior.
+**What it does here:** Encapsulates different ways to rank/sort recipes after they are fetched.
 
 **Role in the app:**
-- `create_http_session(settings)` returns a ready-to-use session.
-- Both the service and UI use sessions configured the same way.
+- The UI lets the user choose a ranking method.
+- `RecipeService.fetch_recipes(...)` accepts a `RecipeStrategy` and uses it to rank results.
 
-Why it fits: avoids duplicating retry/backoff setup and makes HTTP behavior consistent.
+**Examples in code:**
+- `BestMatchStrategy` (prioritizes ingredient + keyword hits)
+- `FewerMissingStrategy` (prioritizes fewer missing ingredients)
 
-### 5) Singleton-like Settings access
+Why it fits: ranking logic changes often and is easy to swap without changing the fetching code or UI.
 
-**Where:** `utils/settings.py`
-
-**What it does here:** Ensures the app uses one shared settings object (cached via `@lru_cache(maxsize=1)`).
-
-**Role in the app:**
-- `get_settings()` returns the same `Settings` instance across the app.
-- Settings are environment-backed (Pydantic Settings + `.env`).
-
-Why it fits: config should be consistent across UI/service and shouldn’t be re-parsed repeatedly.
-
-## Where each pattern fits (text diagram)
+## Where each pattern fits
 
 ```
 UI (ui/app.py)
@@ -139,16 +115,10 @@ Adapters (Adapter)    Strategy (Strategy)
 	| normalize JSON       | ranks unified Recipe list
 	v                     v
 Recipe model (recipe/models.py)
-
-Also used across layers:
-	- create_http_session(...) (Factory function)
-	- get_settings() (Singleton-like cached Settings)
 ```
 
-## Running tests (optional)
-
-If/when you add tests:
+## Running tests
 
 ```powershell
-pytest
+python -m pytest 
 ```
