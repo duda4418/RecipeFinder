@@ -1,4 +1,4 @@
-from recipe.adapters import MealDBAdapter, SpoonacularAdapter
+from recipefinder.adapters import MealDBAdapter, SpoonacularAdapter
 
 
 def test_mealdb_adapter_builds_measure_and_ingredient_lines() -> None:

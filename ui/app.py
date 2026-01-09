@@ -4,10 +4,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Any, List, Optional
 
-from recipe.models import Recipe
-from recipe.query_builder import RecipeQueryBuilder
-from recipe.http_session import create_http_session
-from recipe.service import RecipeService
+from recipefinder.models import Recipe
+from recipefinder.query_builder import RecipeQueryBuilder
+from recipefinder.http_session import create_http_session
+from recipefinder.service import RecipeService
 from utils.settings import get_settings
 
 try:
@@ -21,7 +21,7 @@ except ImportError:
 
 
 class RecipeApp(tk.Tk):
-    """Simple ttk UI that consumes the recipe service."""
+    """Simple ttk UI that consumes the recipefinder service."""
 
     def __init__(self, service: RecipeService) -> None:
         super().__init__()
@@ -60,11 +60,11 @@ class RecipeApp(tk.Tk):
         options_frame.pack(fill=tk.X, pady=(0, 8))
 
         ttk.Label(options_frame, text="Max results:").pack(side=tk.LEFT)
-        self.limit_var = tk.StringVar(value="10")
+        self.limit_var = tk.StringVar(value=str(self._settings.QUERY_DEFAULT_LIMIT))
         ttk.Spinbox(
             options_frame,
             from_=1,
-            to=25,
+            to=self._settings.QUERY_MAX_LIMIT,
             textvariable=self.limit_var,
             width=4,
             wrap=True,
@@ -109,7 +109,7 @@ class RecipeApp(tk.Tk):
         try:
             builder.with_limit(int(self.limit_var.get()))
         except ValueError:
-            builder.with_limit(10)
+            builder.with_limit(self._settings.QUERY_DEFAULT_LIMIT)
 
         self.status_var.set("Searching...")
         self.tree.delete(*self.tree.get_children())
@@ -122,9 +122,9 @@ class RecipeApp(tk.Tk):
         try:
             strategy = self._strategies.get(self.strategy_var.get())
             recipes = self._service.fetch_recipes(builder, strategy)
-            self.after(0, lambda: self._update_results(recipes))
+            self.after(0, self._update_results, recipes)
         except Exception as exc:  # noqa: BLE001
-            self.after(0, lambda: messagebox.showerror("Error", str(exc)))
+            self.after(0, messagebox.showerror, "Error", str(exc))
 
     def _update_results(self, recipes: List[Recipe]) -> None:
         self._recipes = recipes
@@ -156,10 +156,10 @@ class RecipeApp(tk.Tk):
 
     def _load_image(self, url: Optional[str]) -> None:
         if not PIL_AVAILABLE:
-            self.after(0, lambda: self._set_image(None, "Install pillow for images"))
+            self.after(0, self._set_image, None, "Install pillow for images")
             return
         if not url:
-            self.after(0, lambda: self._set_image(None, "No image"))
+            self.after(0, self._set_image, None, "No image")
             return
         try:
             resp = self._session.get(url, timeout=self._settings.HTTP_TIMEOUT)
@@ -167,9 +167,9 @@ class RecipeApp(tk.Tk):
             img = Image.open(io.BytesIO(resp.content))
             img.thumbnail((240, 240))
             photo = ImageTk.PhotoImage(img)
-            self.after(0, lambda: self._set_image(photo, ""))
+            self.after(0, self._set_image, photo, "")
         except Exception as exc:  # noqa: BLE001
-            self.after(0, lambda: self._set_image(None, "Image load failed"))
+            self.after(0, self._set_image, None, "Image load failed")
 
     def _set_image(self, photo: Optional[Any], fallback_text: str) -> None:
         self._image_photo = photo

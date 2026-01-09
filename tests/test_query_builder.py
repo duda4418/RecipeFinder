@@ -1,16 +1,20 @@
-from recipe.query_builder import RecipeQueryBuilder
+from recipefinder.query_builder import RecipeQueryBuilder
 
 
-def test_with_limit_clamps_between_1_and_25() -> None:
+def test_with_limit_clamps_between_1_and_configured_max() -> None:
     builder = RecipeQueryBuilder()
+    max_limit = builder._settings.QUERY_MAX_LIMIT  # sanity: this is our clamp ceiling
 
     assert builder.with_limit(0).limit() == 1
     assert builder.with_limit(-123).limit() == 1
     assert builder.with_limit(1).limit() == 1
-    assert builder.with_limit(10).limit() == 10
-    assert builder.with_limit(25).limit() == 25
-    assert builder.with_limit(26).limit() == 25
-    assert builder.with_limit(999).limit() == 25
+
+    mid = 10 if max_limit >= 10 else max_limit
+    assert builder.with_limit(mid).limit() == mid
+
+    assert builder.with_limit(max_limit).limit() == max_limit
+    assert builder.with_limit(max_limit + 1).limit() == max_limit
+    assert builder.with_limit(999).limit() == max_limit
 
 
 def test_build_for_mealdb_prefers_keywords_then_ingredients() -> None:
@@ -28,7 +32,9 @@ def test_build_for_mealdb_prefers_keywords_then_ingredients() -> None:
 
 
 def test_build_for_spoonacular_includes_limit_and_ingredients() -> None:
-    builder = RecipeQueryBuilder().with_keywords("tacos").with_ingredients(["beef", "onion"]).with_limit(7)
+    builder = (
+        RecipeQueryBuilder().with_keywords("tacos").with_ingredients(["beef", "onion"]).with_limit(7)
+    )
 
     params = builder.build_for_spoonacular(api_key="abc")
     assert params["apiKey"] == "abc"

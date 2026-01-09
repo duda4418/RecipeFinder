@@ -4,7 +4,7 @@ from typing import List, Optional
 
 @dataclass
 class Recipe:
-    """Unified recipe model produced by adapters."""
+    """Unified recipefinder model produced by adapters."""
 
     title: str
     source: str

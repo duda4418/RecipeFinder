@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from recipe.models import Recipe
-from recipe.query_builder import RecipeQueryBuilder
-from recipe.strategies import BestMatchStrategy, FewerMissingStrategy
+from recipefinder.models import Recipe
+from recipefinder.query_builder import RecipeQueryBuilder
+from recipefinder.strategies import BestMatchStrategy, FewerMissingStrategy
 
 
 def test_best_match_strategy_orders_by_score_and_respects_limit() -> None:

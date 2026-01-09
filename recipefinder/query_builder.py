@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+from utils.settings import Settings, get_settings
+
 
 class RecipeQueryBuilder:
     """Builder pattern for consistent query construction across providers.
@@ -11,10 +13,11 @@ class RecipeQueryBuilder:
     duplicating parameter logic in multiple places.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings | None = None) -> None:
+        self._settings = settings or get_settings()
         self._keywords: Optional[str] = None
         self._ingredients: List[str] = []
-        self._limit: int = 10
+        self._limit: int = self._settings.QUERY_DEFAULT_LIMIT
 
     def with_keywords(self, keywords: str) -> "RecipeQueryBuilder":
         self._keywords = keywords.strip() if keywords else None
@@ -25,7 +28,8 @@ class RecipeQueryBuilder:
         return self
 
     def with_limit(self, limit: int) -> "RecipeQueryBuilder":
-        self._limit = max(1, min(limit, 25))
+        max_limit = max(1, int(self._settings.QUERY_MAX_LIMIT))
+        self._limit = max(1, min(int(limit), max_limit))
         return self
 
     def limit(self) -> int:
@@ -38,7 +42,7 @@ class RecipeQueryBuilder:
             return {"i": ",".join(self._ingredients)}
         return {"s": ""}
 
-    def build_for_spoonacular(self, api_key: str) -> Dict[str, str]:
+    def build_for_spoonacular(self, api_key: str) -> Dict[str, str | int]:
         return {
             "apiKey": api_key,
             "query": self._keywords or "",

@@ -37,11 +37,15 @@ SPOONACULAR_URL=https://api.spoonacular.com/recipes/complexSearch
 HTTP_TIMEOUT=10
 HTTP_MAX_RETRIES=3
 HTTP_BACKOFF=0.5
+
+QUERY_DEFAULT_LIMIT=10
+QUERY_MAX_LIMIT=25
 ```
 
 Notes:
 - If `SPOONACULAR_API_KEY` is not set, the app still works using TheMealDB.
 - Images in the UI require `pillow` (already listed in `requirements.txt`).
+- `RecipeQueryBuilder.with_limit(n)` always clamps the value to `1..QUERY_MAX_LIMIT`.
 
 ### 4) Start the app
 

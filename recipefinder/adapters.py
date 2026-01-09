@@ -6,7 +6,7 @@ from .models import Recipe
 
 
 class RecipeAdapter:
-    """Base adapter interface for unified recipe mapping."""
+    """Base adapter interface for unified recipefinder mapping."""
 
     def adapt(self, data: Dict) -> List[Recipe]:
         raise NotImplementedError
@@ -82,5 +82,5 @@ def _strip_html(text: str) -> str:
 if __name__ == "__main__":
     raise SystemExit(
         "This file is a package module. Run the app with: python main.py\n"
-        "Or run this module with: python -m recipe.adapters"
+        "Or run this module with: python -m recipefinder.adapters"
     )

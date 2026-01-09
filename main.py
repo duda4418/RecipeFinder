@@ -1,5 +1,5 @@
-from recipe.env_loader import load_dotenv_if_present
-from recipe.service import RecipeService
+from recipefinder.env_loader import load_dotenv_if_present
+from recipefinder.service import RecipeService
 from ui.app import RecipeApp
 
 
